@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Shared design tokens (matching portfolio) ── */
+
+@layer components {
+  .gradient-text {
+    @apply bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-500 bg-clip-text text-transparent;
+  }
+
+  .gradient-bg {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #4338ca 60%, #6366f1 100%);
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold
+           bg-gradient-to-r from-indigo-500 to-violet-500 text-white
+           hover:from-indigo-600 hover:to-violet-600
+           shadow-lg shadow-indigo-500/25
+           transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold
+           border-2 border-indigo-500 text-indigo-500
+           hover:bg-indigo-500 hover:text-white
+           transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium
+           text-slate-600 dark:text-slate-300
+           hover:bg-slate-100 dark:hover:bg-slate-700
+           transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700
+           shadow-md hover:shadow-lg transition-shadow duration-200;
+  }
+
+  .glass {
+    @apply bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl
+           bg-white dark:bg-slate-800
+           border border-slate-200 dark:border-slate-600
+           text-slate-900 dark:text-white
+           placeholder-slate-400
+           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+           transition-all duration-200;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-slate-100 dark:bg-slate-900;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-500;
+}
