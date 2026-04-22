@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ middleware: 'auth' })
 
+const user = useSupabaseUser()
 const { getRecentSessions, getSessionCount } = useSleepSessions()
 const { getActiveGoal, calculateStreak } = useGoals()
 const analytics = useAnalytics()
@@ -34,7 +35,6 @@ onMounted(async () => {
 })
 
 const avgHours = computed(() => analytics.averageHours(sessions.value))
-const bestQual = computed(() => analytics.bestQuality(sessions.value))
 const avgQual = computed(() => analytics.averageQuality(sessions.value))
 const comparison = computed(() => analytics.weeklyComparison(sessions.value))
 const qualDist = computed(() => analytics.qualityDistribution(sessions.value))
@@ -42,126 +42,168 @@ const weeklyData = computed(() => analytics.dailyAverages(sessions.value))
 const trendPoints = computed(() => analytics.trendData(sessions.value))
 const insight = computed(() => analytics.generateInsight(sessions.value, streak.value))
 
-const deltaStr = computed(() => {
-  const d = comparison.value.delta
-  if (d === 0) return undefined
-  return (d > 0 ? '+' : '') + d + 'h'
+const greeting = computed(() => {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
 })
+
+const todayLabel = computed(() =>
+  new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }),
+)
+
+const comparisonText = computed(() => {
+  const d = Math.abs(comparison.value.delta)
+  if (d === 0) return 'same as last week'
+  return `${d}h vs last week`
+})
+
+const qualityLegend = ['Terrible', 'Poor', 'Okay', 'Good', 'Excellent']
 </script>
 
 <template>
-  <div>
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">Dashboard</h1>
-      <NuxtLink to="/log" class="btn-primary text-sm">+ Log Sleep</NuxtLink>
+  <section class="fade-up space-y-5">
+    <header class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="opti-title text-2xl font-bold sm:text-[28px]">
+          {{ greeting }}, {{ user?.email?.split('@')[0] || 'Rabin' }}
+        </p>
+        <p class="text-sm" style="color: var(--text-soft);">
+          {{ todayLabel }} · 30-day overview
+        </p>
+      </div>
+      <NuxtLink to="/log" class="opti-btn-primary px-5 py-2.5">
+        <AppIcon name="plus" :size="14" color="white" />
+        Log Sleep
+      </NuxtLink>
+    </header>
+
+    <div v-if="loading" class="opti-panel rounded-2xl p-12 text-center">
+      <div class="mx-auto mb-4 grid h-12 w-12 animate-pulse place-items-center rounded-xl" style="background: var(--accent-dim);">
+        <AppIcon name="moon" :size="20" color="var(--accent)" />
+      </div>
+      <p style="color: var(--text-soft);">Loading your sleep data...</p>
     </div>
 
-    <!-- Loading -->
-    <div v-if="loading" class="text-center py-16 text-slate-400">
-      <div class="text-4xl animate-pulse mb-3">📊</div>
-      <p>Loading your sleep data...</p>
-    </div>
-
-    <!-- Empty state -->
-    <div v-else-if="!sessions.length" class="card p-12 text-center">
-      <div class="text-5xl mb-4">😴</div>
-      <h2 class="text-xl font-bold mb-2">Welcome to OptiSleep!</h2>
-      <p class="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
-        Start by logging your first sleep session. Your dashboard will come alive with charts and insights.
+    <div v-else-if="!sessions.length" class="opti-panel rounded-2xl p-12 text-center">
+      <div class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl" style="background: var(--accent-dim);">
+        <AppIcon name="moon" :size="24" color="var(--accent)" />
+      </div>
+      <h2 class="opti-title mb-1 text-2xl font-bold">Welcome to OptiSleep</h2>
+      <p class="mx-auto mb-6 max-w-md text-sm leading-relaxed" style="color: var(--text-soft);">
+        Start by logging your first sleep session. Your dashboard will populate with trends,
+        quality patterns, and actionable insights.
       </p>
       <div class="flex flex-wrap justify-center gap-3">
-        <NuxtLink to="/log" class="btn-primary">Log Sleep</NuxtLink>
-        <NuxtLink to="/goals" class="btn-secondary">Set a Goal</NuxtLink>
+        <NuxtLink to="/log" class="opti-btn-primary">Log Sleep</NuxtLink>
+        <NuxtLink to="/goals" class="opti-btn-secondary">Set Goal</NuxtLink>
       </div>
     </div>
 
-    <!-- Dashboard content -->
-    <div v-else class="space-y-6">
-      <!-- Insight banner -->
+    <template v-else>
       <InsightBanner :message="insight" />
 
-      <!-- Stat cards -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          icon="🛏️"
+          icon="moon"
           label="Avg Sleep"
-          :value="avgHours + 'h'"
-          :delta="deltaStr"
+          :value="`${avgHours}h`"
+          :delta="comparisonText"
           :delta-positive="comparison.delta >= 0"
         />
         <StatCard
-          icon="🔥"
+          icon="flame"
           label="Current Streak"
-          :value="streak + ' days'"
+          :value="`${streak}d`"
+          sub="consecutive nights"
+          accent-color="var(--orange)"
         />
         <StatCard
-          icon="⭐"
-          label="Best Quality"
-          :value="bestQual + '/5'"
+          icon="star"
+          label="Avg Quality"
+          :value="`${avgQual}/5`"
+          sub="out of 5"
+          accent-color="var(--amber)"
         />
         <StatCard
-          icon="📋"
+          icon="grid"
           label="Total Sessions"
           :value="totalCount"
+          sub="past 30 days"
         />
       </div>
 
-      <!-- Charts row -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Trend chart -->
-        <div class="card p-5">
-          <h3 class="font-bold mb-4">Sleep Trend (30 days)</h3>
-          <SleepTrendChart
-            :data="trendPoints"
-            :target-hours="goal?.target_hours"
-          />
-        </div>
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <article class="opti-panel rounded-2xl p-5 xl:col-span-2">
+          <div class="mb-4 flex items-center justify-between">
+            <h3 class="opti-title text-base font-bold">Sleep Trend · 30 days</h3>
+            <span class="text-xs" style="color: var(--muted);">
+              {{ goal?.target_hours || 8 }}h target
+            </span>
+          </div>
+          <SleepTrendChart :data="trendPoints" :target-hours="goal?.target_hours || 8" />
+        </article>
 
-        <!-- Weekly bar chart -->
-        <div class="card p-5">
-          <h3 class="font-bold mb-4">Daily Averages</h3>
-          <WeeklyBarChart
-            :data="weeklyData"
-            :target-hours="goal?.target_hours"
-          />
-        </div>
+        <article class="opti-panel rounded-2xl p-5">
+          <h3 class="opti-title mb-3 text-base font-bold">Quality Distribution</h3>
+          <QualityDonut :distribution="qualDist" :average-quality="avgQual" />
+          <div class="mt-2 space-y-1.5">
+            <div
+              v-for="(label, idx) in qualityLegend"
+              :key="label"
+              class="flex items-center justify-between text-xs"
+            >
+              <span style="color: var(--text-soft);">{{ label }}</span>
+              <span style="color: var(--muted);">{{ qualDist[idx] }}</span>
+            </div>
+          </div>
+        </article>
       </div>
 
-      <!-- Quality donut -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="card p-5">
-          <h3 class="font-bold mb-4">Quality Distribution</h3>
-          <QualityDonut :distribution="qualDist" :average-quality="avgQual" />
-        </div>
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <article class="opti-panel rounded-2xl p-5 xl:col-span-2">
+          <h3 class="opti-title mb-4 text-base font-bold">Weekly Pattern</h3>
+          <WeeklyBarChart :data="weeklyData" :target-hours="goal?.target_hours || 8" />
+        </article>
 
-        <!-- Quick actions -->
-        <div class="lg:col-span-2 card p-5">
-          <h3 class="font-bold mb-4">Quick Actions</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <NuxtLink to="/log" class="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
-              <span class="text-2xl">😴</span>
+        <article class="opti-panel rounded-2xl p-5">
+          <h3 class="opti-title mb-4 text-base font-bold">Quick Actions</h3>
+          <div class="space-y-2.5">
+            <NuxtLink to="/log" class="flex items-center gap-3 rounded-xl border p-3 transition-colors hover:bg-[var(--accent-dim)]" style="border-color: var(--border);">
+              <span class="grid h-8 w-8 place-items-center rounded-lg" style="background: var(--accent-dim);">
+                <AppIcon name="plus" :size="14" color="var(--accent)" />
+              </span>
               <div>
-                <p class="font-semibold text-sm">Log Sleep</p>
-                <p class="text-xs text-slate-500">Record last night</p>
+                <p class="text-sm font-semibold">Log Sleep</p>
+                <p class="text-xs" style="color: var(--muted);">Record last night</p>
               </div>
             </NuxtLink>
-            <NuxtLink to="/goals" class="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
-              <span class="text-2xl">🎯</span>
+            <NuxtLink to="/goals" class="flex items-center gap-3 rounded-xl border p-3 transition-colors hover:bg-[var(--accent-dim)]" style="border-color: var(--border);">
+              <span class="grid h-8 w-8 place-items-center rounded-lg" style="background: var(--accent-dim);">
+                <AppIcon name="target" :size="14" color="var(--accent)" />
+              </span>
               <div>
-                <p class="font-semibold text-sm">Goals</p>
-                <p class="text-xs text-slate-500">{{ goal ? 'View streak' : 'Set a goal' }}</p>
+                <p class="text-sm font-semibold">Goals</p>
+                <p class="text-xs" style="color: var(--muted);">{{ streak }} day streak</p>
               </div>
             </NuxtLink>
-            <NuxtLink to="/history" class="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
-              <span class="text-2xl">📋</span>
+            <NuxtLink to="/history" class="flex items-center gap-3 rounded-xl border p-3 transition-colors hover:bg-[var(--accent-dim)]" style="border-color: var(--border);">
+              <span class="grid h-8 w-8 place-items-center rounded-lg" style="background: var(--accent-dim);">
+                <AppIcon name="clock" :size="14" color="var(--accent)" />
+              </span>
               <div>
-                <p class="font-semibold text-sm">History</p>
-                <p class="text-xs text-slate-500">All sessions</p>
+                <p class="text-sm font-semibold">History</p>
+                <p class="text-xs" style="color: var(--muted);">All sessions</p>
               </div>
             </NuxtLink>
           </div>
-        </div>
+        </article>
       </div>
-    </div>
-  </div>
+    </template>
+  </section>
 </template>

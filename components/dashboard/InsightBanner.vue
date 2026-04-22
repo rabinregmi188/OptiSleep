@@ -5,10 +5,18 @@ defineProps<{
 </script>
 
 <template>
-  <div class="card p-4 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 border-indigo-200 dark:border-indigo-800">
-    <div class="flex items-center gap-3">
-      <span class="text-xl flex-shrink-0">💡</span>
-      <p class="text-sm font-medium text-indigo-700 dark:text-indigo-300">{{ message }}</p>
-    </div>
+  <div
+    class="fade-up flex items-start gap-3 rounded-2xl border px-4 py-3"
+    style="
+      background: linear-gradient(135deg, rgba(109,40,217,0.18), rgba(167,139,250,0.08));
+      border-color: rgba(167,139,250,0.22);
+    "
+  >
+    <span class="mt-0.5 grid h-7 w-7 place-items-center rounded-lg" style="background: rgba(167,139,250,0.16);">
+      <AppIcon name="zap" :size="14" color="var(--accent-light)" />
+    </span>
+    <p class="text-sm leading-relaxed" style="color: var(--accent-light);">
+      {{ message }}
+    </p>
   </div>
 </template>

@@ -40,8 +40,9 @@ function formatDate(dateStr: string) {
 
 function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString('en-US', {
-    hour: 'numeric',
+    hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   })
 }
 
@@ -49,75 +50,84 @@ function durationHours(minutes: number) {
   return Math.round((minutes / 60) * 10) / 10
 }
 
-const qualityEmojis = ['😫', '😔', '😐', '😊', '😍']
+const qualityLabels = ['Terrible', 'Poor', 'Okay', 'Good', 'Excellent']
+const qualityColors = ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#a78bfa']
 </script>
 
 <template>
-  <div>
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">Sleep History</h1>
-      <NuxtLink to="/log" class="btn-primary text-sm">+ Log Sleep</NuxtLink>
+  <section class="fade-up space-y-4">
+    <header class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h1 class="opti-title text-2xl font-bold">Sleep History</h1>
+        <p class="text-sm" style="color: var(--text-soft);">
+          {{ sessions.length }} sessions recorded
+        </p>
+      </div>
+      <NuxtLink to="/log" class="opti-btn-primary px-5 py-2.5">
+        <AppIcon name="plus" :size="14" color="white" />
+        Log Sleep
+      </NuxtLink>
+    </header>
+
+    <div v-if="loading" class="opti-panel rounded-2xl p-12 text-center">
+      <div class="mx-auto mb-4 grid h-12 w-12 animate-pulse place-items-center rounded-xl" style="background: var(--accent-dim);">
+        <AppIcon name="clock" :size="20" color="var(--accent)" />
+      </div>
+      <p style="color: var(--text-soft);">Loading sessions...</p>
     </div>
 
-    <!-- Loading -->
-    <div v-if="loading" class="text-center py-12 text-slate-400">
-      <div class="text-3xl animate-pulse mb-2">😴</div>
-      <p>Loading sessions...</p>
+    <div v-else-if="!sessions.length" class="opti-panel rounded-2xl p-12 text-center">
+      <div class="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-xl" style="background: var(--accent-dim);">
+        <AppIcon name="clock" :size="20" color="var(--accent)" />
+      </div>
+      <h2 class="opti-title text-xl font-bold">No sleep sessions yet</h2>
+      <p class="mx-auto mt-1 max-w-md text-sm" style="color: var(--text-soft);">
+        Start tracking your sleep to unlock patterns and consistency insights.
+      </p>
+      <NuxtLink to="/log" class="opti-btn-primary mt-5">Log Your First Night</NuxtLink>
     </div>
 
-    <!-- Empty state -->
-    <div v-else-if="!sessions.length" class="card p-12 text-center">
-      <div class="text-4xl mb-3">📋</div>
-      <p class="text-lg font-semibold mb-2">No sleep sessions yet</p>
-      <p class="text-slate-500 mb-4">Start tracking your sleep to see your history.</p>
-      <NuxtLink to="/log" class="btn-primary">Log Your First Night</NuxtLink>
-    </div>
-
-    <!-- Session list -->
-    <div v-else class="space-y-3">
-      <div
+    <div v-else class="space-y-2.5">
+      <article
         v-for="session in sessions"
         :key="session.id"
-        class="card p-4 flex items-center gap-4"
+        class="opti-panel flex items-start gap-4 rounded-2xl border-l-[3px] px-4 py-3.5"
+        :style="{ borderLeftColor: qualityColors[session.quality_rating - 1] }"
       >
-        <!-- Quality emoji -->
-        <div class="text-3xl flex-shrink-0">{{ qualityEmojis[session.quality_rating - 1] }}</div>
+        <div class="w-9 shrink-0 text-center">
+          <p class="opti-title text-2xl font-extrabold leading-none" :style="{ color: qualityColors[session.quality_rating - 1] }">
+            {{ session.quality_rating }}
+          </p>
+          <p class="text-[10px]" style="color: var(--muted);">/5</p>
+        </div>
 
-        <!-- Info -->
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="font-semibold">{{ formatDate(session.bedtime) }}</span>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-mono">
+        <div class="mt-0.5 h-9 w-px shrink-0" style="background: var(--border);" />
+
+        <div class="min-w-0 flex-1">
+          <div class="mb-1 flex flex-wrap items-center gap-2">
+            <p class="text-sm font-semibold">{{ formatDate(session.bedtime) }}</p>
+            <span class="rounded-full px-2 py-0.5 text-[11px] font-semibold" style="background: var(--accent-dim); color: var(--accent);">
               {{ durationHours(session.duration_minutes) }}h
             </span>
+            <span class="text-[11px] font-semibold" :style="{ color: qualityColors[session.quality_rating - 1] }">
+              {{ qualityLabels[session.quality_rating - 1] }}
+            </span>
           </div>
-          <p class="text-sm text-slate-500 dark:text-slate-400">
-            {{ formatTime(session.bedtime) }} &rarr; {{ formatTime(session.wake_time) }}
-          </p>
-          <p v-if="session.notes" class="text-sm text-slate-400 dark:text-slate-500 truncate mt-1">
-            {{ session.notes }}
+          <p class="text-sm" style="color: var(--text-soft);">
+            {{ formatTime(session.bedtime) }} → {{ formatTime(session.wake_time) }}
+            <span v-if="session.notes" style="color: var(--muted);"> · {{ session.notes }}</span>
           </p>
         </div>
 
-        <!-- Quality stars -->
-        <div class="hidden sm:flex items-center gap-0.5 flex-shrink-0">
-          <span v-for="n in 5" :key="n" class="text-sm">
-            {{ n <= session.quality_rating ? '⭐' : '☆' }}
-          </span>
-        </div>
-
-        <!-- Delete -->
         <button
-          @click="handleDelete(session.id)"
+          class="rounded-lg p-2 transition-colors"
           :disabled="deleting === session.id"
-          class="flex-shrink-0 p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-          aria-label="Delete session"
+          style="color: var(--muted);"
+          @click="handleDelete(session.id)"
         >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
+          <AppIcon name="trash" :size="14" />
         </button>
-      </div>
+      </article>
     </div>
-  </div>
+  </section>
 </template>

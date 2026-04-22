@@ -7,7 +7,7 @@ const form = ref({
   date: new Date().toISOString().split('T')[0],
   bedtime: '22:30',
   wakeTime: '06:30',
-  quality: 3,
+  quality: 4,
   notes: '',
 })
 
@@ -18,11 +18,13 @@ const success = ref(false)
 const duration = computed(() => {
   const bed = new Date(`${form.value.date}T${form.value.bedtime}:00`)
   let wake = new Date(`${form.value.date}T${form.value.wakeTime}:00`)
-  // If wake time is before bedtime, it's the next day
   if (wake <= bed) wake.setDate(wake.getDate() + 1)
   const diff = (wake.getTime() - bed.getTime()) / (1000 * 60 * 60)
   return Math.round(diff * 10) / 10
 })
+
+const qualityLabels = ['Terrible', 'Poor', 'Okay', 'Good', 'Excellent']
+const qualityColors = ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#a78bfa']
 
 async function handleSubmit() {
   loading.value = true
@@ -33,102 +35,105 @@ async function handleSubmit() {
     const bedtime = new Date(`${form.value.date}T${form.value.bedtime}:00`).toISOString()
     let wakeDate = new Date(`${form.value.date}T${form.value.wakeTime}:00`)
     if (new Date(bedtime) >= wakeDate) wakeDate.setDate(wakeDate.getDate() + 1)
-    const wake_time = wakeDate.toISOString()
 
     await addSession({
       bedtime,
-      wake_time,
+      wake_time: wakeDate.toISOString(),
       quality_rating: form.value.quality,
       notes: form.value.notes || undefined,
     })
 
     success.value = true
-    setTimeout(() => navigateTo('/dashboard'), 1500)
+    setTimeout(() => navigateTo('/dashboard'), 1200)
   } catch (e: any) {
     error.value = e.message || 'Failed to log sleep session'
   } finally {
     loading.value = false
   }
 }
-
-const qualityLabels = ['Terrible', 'Poor', 'Okay', 'Good', 'Excellent']
 </script>
 
 <template>
-  <div class="max-w-lg mx-auto">
-    <h1 class="text-2xl font-bold mb-6">Log Sleep Session</h1>
-
-    <div v-if="success" class="card p-6 text-center">
-      <div class="text-4xl mb-3">✅</div>
-      <p class="text-lg font-semibold text-green-600 dark:text-green-400">Sleep logged!</p>
-      <p class="text-sm text-slate-500 mt-1">Redirecting to dashboard...</p>
+  <section class="fade-up mx-auto w-full max-w-2xl">
+    <div v-if="success" class="opti-panel flex min-h-[320px] flex-col items-center justify-center rounded-3xl p-8 text-center">
+      <div class="mb-4 grid h-16 w-16 place-items-center rounded-full border-2" style="border-color: var(--green); background: rgba(110,231,183,0.12);">
+        <AppIcon name="check" :size="28" color="var(--green)" />
+      </div>
+      <h2 class="opti-title text-2xl font-bold">Sleep logged!</h2>
+      <p class="mt-1 text-sm" style="color: var(--text-soft);">Redirecting to dashboard...</p>
     </div>
 
-    <form v-else @submit.prevent="handleSubmit" class="card p-6 space-y-5">
-      <!-- Date -->
+    <form v-else class="opti-panel space-y-6 rounded-3xl p-6 sm:p-8" @submit.prevent="handleSubmit">
       <div>
-        <label for="date" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Date</label>
-        <input id="date" v-model="form.date" type="date" class="input-field" required />
+        <p class="opti-eyebrow">Quick logging</p>
+        <h1 class="opti-title text-2xl font-bold">Log Sleep Session</h1>
+        <p class="mt-1 text-sm" style="color: var(--text-soft);">Record how you slept last night.</p>
       </div>
 
-      <!-- Bedtime & Wake time row -->
-      <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label for="date" class="opti-label">Date</label>
+        <input id="date" v-model="form.date" type="date" class="opti-input" required>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label for="bedtime" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Bedtime</label>
-          <input id="bedtime" v-model="form.bedtime" type="time" class="input-field" required />
+          <label for="bedtime" class="opti-label">Bedtime</label>
+          <input id="bedtime" v-model="form.bedtime" type="time" class="opti-input" required>
         </div>
         <div>
-          <label for="waketime" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Wake Time</label>
-          <input id="waketime" v-model="form.wakeTime" type="time" class="input-field" required />
+          <label for="wake-time" class="opti-label">Wake Time</label>
+          <input id="wake-time" v-model="form.wakeTime" type="time" class="opti-input" required>
         </div>
       </div>
 
-      <!-- Duration display -->
-      <div class="text-center py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
-        <span class="text-sm text-slate-500 dark:text-slate-400">Duration: </span>
-        <span class="font-bold text-indigo-600 dark:text-indigo-400 text-lg">{{ duration }}h</span>
+      <div class="rounded-xl border px-4 py-3 text-center" style="background: var(--accent-dim); border-color: var(--border-strong);">
+        <span class="text-sm" style="color: var(--text-soft);">Duration · </span>
+        <span class="opti-title text-3xl font-extrabold" style="color: var(--accent);">{{ duration }}h</span>
       </div>
 
-      <!-- Quality rating -->
       <div>
-        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Sleep Quality</label>
-        <div class="flex items-center justify-between gap-2">
+        <label class="opti-label">Sleep Quality</label>
+        <div class="grid grid-cols-5 gap-2">
           <button
             v-for="n in 5"
             :key="n"
             type="button"
+            class="rounded-xl border px-1 py-2.5 text-center transition-all"
+            :style="{
+              borderColor: form.quality >= n ? qualityColors[n - 1] : 'var(--border)',
+              background: form.quality >= n ? `${qualityColors[n - 1]}22` : 'transparent',
+            }"
             @click="form.quality = n"
-            class="flex-1 py-3 rounded-xl text-center text-2xl transition-all duration-200 border-2"
-            :class="form.quality >= n
-              ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 scale-105'
-              : 'border-slate-200 dark:border-slate-600 hover:border-slate-300'"
           >
-            {{ n <= 2 ? '🌙' : n <= 4 ? '⭐' : '🌟' }}
-            <div class="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-1">{{ qualityLabels[n - 1] }}</div>
+            <p class="opti-title text-xl font-extrabold" :style="{ color: form.quality >= n ? qualityColors[n - 1] : 'var(--muted)' }">
+              {{ n }}
+            </p>
+            <p class="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.03em]" :style="{ color: form.quality >= n ? qualityColors[n - 1] : 'var(--muted)' }">
+              {{ qualityLabels[n - 1] }}
+            </p>
           </button>
         </div>
       </div>
 
-      <!-- Notes -->
       <div>
-        <label for="notes" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Notes (optional)</label>
+        <label for="notes" class="opti-label">
+          Notes <span class="normal-case tracking-normal" style="color: var(--muted);">— optional</span>
+        </label>
         <textarea
           id="notes"
           v-model="form.notes"
           rows="3"
           placeholder="How did you sleep? Any dreams?"
-          class="input-field resize-none"
-        ></textarea>
+          class="opti-input resize-none"
+        />
       </div>
 
-      <!-- Error -->
-      <p v-if="error" class="text-red-500 text-sm text-center">{{ error }}</p>
+      <p v-if="error" class="text-sm text-red-300">{{ error }}</p>
 
-      <!-- Submit -->
-      <button type="submit" :disabled="loading" class="btn-primary w-full py-4 text-base">
+      <button type="submit" :disabled="loading" class="opti-btn-primary w-full rounded-xl py-3.5 text-base">
         <span v-if="loading">Saving...</span>
         <span v-else>Log Sleep Session</span>
       </button>
     </form>
-  </div>
+  </section>
 </template>

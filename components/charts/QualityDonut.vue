@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Doughnut } from 'vue-chartjs'
-import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 
-ChartJS.register(ArcElement, Tooltip)
+ChartJS.register(ArcElement, Tooltip, Legend)
 
 const props = defineProps<{
   distribution: number[]
@@ -14,15 +14,9 @@ const chartData = computed(() => ({
   datasets: [
     {
       data: props.distribution,
-      backgroundColor: [
-        '#EF4444',
-        '#F59E0B',
-        '#EAB308',
-        '#84CC16',
-        '#22C55E',
-      ],
+      backgroundColor: ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#a78bfa'],
       borderWidth: 0,
-      hoverOffset: 8,
+      hoverOffset: 6,
     },
   ],
 }))
@@ -30,9 +24,13 @@ const chartData = computed(() => ({
 const options = {
   responsive: true,
   maintainAspectRatio: false,
-  cutout: '65%',
+  cutout: '72%',
   plugins: {
+    legend: { display: false },
     tooltip: {
+      backgroundColor: '#17122a',
+      borderColor: 'rgba(167,139,250,0.22)',
+      borderWidth: 1,
       callbacks: {
         label: (ctx: any) => `${ctx.label}: ${ctx.raw} nights`,
       },
@@ -42,12 +40,14 @@ const options = {
 </script>
 
 <template>
-  <div class="relative h-48">
+  <div class="relative h-44">
     <Doughnut :data="chartData" :options="options" />
-    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+    <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
       <div class="text-center">
-        <p class="text-2xl font-bold">{{ averageQuality }}</p>
-        <p class="text-xs text-slate-500 dark:text-slate-400">avg quality</p>
+        <p class="opti-title text-3xl font-extrabold leading-none">{{ averageQuality }}</p>
+        <p class="text-[10px] uppercase tracking-[0.08em]" style="color: var(--text-soft);">
+          avg quality
+        </p>
       </div>
     </div>
   </div>

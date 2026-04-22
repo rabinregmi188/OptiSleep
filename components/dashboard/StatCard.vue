@@ -1,26 +1,42 @@
 <script setup lang="ts">
-defineProps<{
+withDefaults(defineProps<{
   icon: string
   label: string
   value: string | number
   delta?: string
   deltaPositive?: boolean
-}>()
+  accentColor?: string
+  sub?: string
+}>(), {
+  accentColor: 'var(--accent)',
+})
 </script>
 
 <template>
-  <div class="card p-5">
-    <div class="flex items-start justify-between">
-      <span class="text-2xl">{{ icon }}</span>
+  <article class="opti-panel rounded-2xl p-5">
+    <div class="mb-3 flex items-start justify-between">
+      <p class="text-[11px] font-medium uppercase tracking-[0.06em]" style="color: var(--text-soft);">
+        {{ label }}
+      </p>
       <span
-        v-if="delta"
-        class="text-xs font-semibold px-2 py-0.5 rounded-full"
-        :class="deltaPositive ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'"
+        class="grid h-8 w-8 place-items-center rounded-[10px]"
+        :style="{ background: `${accentColor}1a` }"
       >
-        {{ delta }}
+        <AppIcon :name="icon" :size="15" :color="accentColor" />
       </span>
     </div>
-    <p class="text-2xl font-extrabold mt-2">{{ value }}</p>
-    <p class="text-sm text-slate-500 dark:text-slate-400">{{ label }}</p>
-  </div>
+
+    <p class="opti-title text-3xl font-extrabold leading-none">{{ value }}</p>
+
+    <p
+      v-if="delta"
+      class="mt-1 text-xs font-medium"
+      :style="{ color: deltaPositive ? 'var(--green)' : 'var(--red)' }"
+    >
+      {{ deltaPositive ? '↑' : '↓' }} {{ delta }}
+    </p>
+    <p v-else-if="sub" class="mt-1 text-xs" style="color: var(--text-soft);">
+      {{ sub }}
+    </p>
+  </article>
 </template>

@@ -9,8 +9,11 @@ watch(user, (val) => {
 </script>
 
 <template>
-  <div class="text-center text-white">
-    <div class="text-4xl mb-4 animate-pulse">😴</div>
-    <p class="text-lg">Signing you in...</p>
+  <div class="mx-auto max-w-md rounded-3xl border p-8 text-center" style="background: rgba(16,13,28,0.82); border-color: var(--border);">
+    <div class="mx-auto mb-4 grid h-14 w-14 animate-pulse place-items-center rounded-2xl" style="background: var(--accent-dim);">
+      <AppIcon name="moon" :size="24" color="var(--accent)" />
+    </div>
+    <p class="opti-title text-2xl font-bold">Signing you in...</p>
+    <p class="mt-1 text-sm" style="color: var(--text-soft);">One moment while we finish authentication.</p>
   </div>
 </template>
