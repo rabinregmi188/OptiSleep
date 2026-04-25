@@ -8,6 +8,8 @@ export default defineNuxtConfig({
   ],
 
   supabase: {
+    url: process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
+    key: process.env.SUPABASE_KEY || 'placeholder-key',
     redirectOptions: {
       login: '/login',
       callback: '/confirm',
