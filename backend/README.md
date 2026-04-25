@@ -39,22 +39,42 @@ Or with Docker:
 docker compose up --build
 ```
 
-## Endpoints (commit 1)
+## Endpoints
 
-| Method | Path                     | Auth | Description                       |
-|-------:|--------------------------|------|-----------------------------------|
-|   GET  | `/health`                | no   | Liveness probe                    |
-|   GET  | `/api/sessions`          | yes  | List the caller's sleep sessions  |
-|  POST  | `/api/sessions`          | yes  | Log a new session                 |
-|  PATCH | `/api/sessions/{id}`     | yes  | Edit a session                    |
-| DELETE | `/api/sessions/{id}`     | yes  | Delete a session                  |
-|   GET  | `/api/goals`             | yes  | Get the caller's goal             |
-|   PUT  | `/api/goals`             | yes  | Create or update goal             |
+| Method | Path                       | Auth | Description                                              |
+|-------:|----------------------------|------|----------------------------------------------------------|
+|   GET  | `/health`                  | no   | Liveness probe                                           |
+|   GET  | `/api/sessions`            | yes  | List the caller's sleep sessions                         |
+|  POST  | `/api/sessions`            | yes  | Log a new session                                        |
+|  PATCH | `/api/sessions/{id}`       | yes  | Edit a session                                           |
+| DELETE | `/api/sessions/{id}`       | yes  | Delete a session                                         |
+|   GET  | `/api/goals`               | yes  | Get the caller's goal                                    |
+|   PUT  | `/api/goals`               | yes  | Create or update goal                                    |
+|   GET  | `/api/analytics/summary`   | yes  | Sleep score + streak + drift + consistency (Redis cache) |
+|   GET  | `/api/insights/weekly`     | yes  | Gemini-generated coaching summary, persisted per week    |
 
-Coming next:
-- `GET /api/analytics/summary` — sleep score, streaks, weekend drift
-- `GET /api/insights/weekly` — Gemini-generated coaching summary
-- Redis caching for analytics endpoints
+### Analytics summary
+
+Computed from the last 30 sessions (configurable via `?days=`):
+
+- **sleep_score** (0–100) — weighted blend of duration vs goal (50%), self-reported quality (30%), bedtime consistency (20%)
+- **avg_duration_minutes**, **avg_quality**, **avg_bedtime**
+- **weekend_drift_minutes** — signed difference between weekend and weekday bedtimes
+- **bedtime_consistency_minutes** — population stdev of bedtime
+- **current_streak** — consecutive nights logged (counts back from today or yesterday)
+
+Cached for 5 minutes per `(user, days)` key.
+
+### Weekly insight
+
+Builds a prompt from the last 14 nights' summary metrics and asks Gemini for
+a 2–3 sentence personalized coaching paragraph. Lookup order:
+
+1. Redis (1h TTL)
+2. `insights` table (this week's row, keyed on Monday)
+3. Compute summary → call Gemini → write to table → cache → return
+
+Only the first request per user per week pays for a Gemini call.
 
 ## Tests
 

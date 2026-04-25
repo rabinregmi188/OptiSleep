@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routes import goals, sessions
+from .routes import analytics, goals, insights, sessions
 
 settings = get_settings()
 
@@ -28,3 +28,5 @@ def health():
 
 app.include_router(sessions.router)
 app.include_router(goals.router)
+app.include_router(analytics.router)
+app.include_router(insights.router)
