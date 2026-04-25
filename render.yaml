@@ -1,0 +1,43 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# How to use:
+# 1. Push this file (already in the repo).
+# 2. On Render: New → Blueprint → connect github.com/rabinregmi188/OptiSleep.
+# 3. Render reads this file, creates the service, and prompts for the secret
+#    env vars marked `sync: false` below.
+# 4. After the first deploy, the service URL will be:
+#       https://optisleep-api.onrender.com
+#    Hit /docs for the OpenAPI UI, /health for a liveness probe.
+
+services:
+  - type: web
+    name: optisleep-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      # Pasted from the Render dashboard the first time the blueprint runs.
+      # Each `sync: false` means "Render will prompt for this and store it as a secret."
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
+      - key: REDIS_URL
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://optisleep-app.vercel.app,https://rabin-portfolio-rust.vercel.app,http://localhost:5173,http://localhost:3000
+      - key: PYTHONUNBUFFERED
+        value: "1"
