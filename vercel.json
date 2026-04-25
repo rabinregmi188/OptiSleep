@@ -1,0 +1,6 @@
+{
+  "framework": null,
+  "installCommand": "echo \"No install step required\"",
+  "buildCommand": "echo \"No build step required\"",
+  "outputDirectory": "."
+}
